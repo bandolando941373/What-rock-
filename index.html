@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Rock Identifier</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial;
+      background: #111;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+    .box {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 400px;
+      margin: auto;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background: #4CAF50;
+      color: white;
+      font-size: 16px;
+    }
+    img {
+      max-width: 100%;
+      margin-top: 10px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="box">
+  <h2>Rock Identifier</h2>
+  <input type="file" id="imageInput" accept="image/*">
+  <br><br>
+  <button onclick="analyze()">Identify</button>
+  <p id="result"></p>
+  <img id="preview">
+</div>
+
+<script>
+async function analyze() {
+  const file = document.getElementById("imageInput").files[0];
+  if (!file) {
+    alert("Upload an image first");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async function() {
+    const base64 = reader.result.split(",")[1];
+
+    document.getElementById("preview").src = reader.result;
+    document.getElementById("result").innerText = "Analyzing...";
+
+    const res = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "sk-1234567890abcdef1234567890abcdef12345678"
+      },
+      body: JSON.stringify({
+        model: "gpt-4.1-mini",
+        input: [{
+          role: "user",
+          content: [
+            { type: "input_text", text: "Identify this rock and give a short description." },
+            { type: "input_image", image_base64: base64 }
+          ]
+        }]
+      })
+    });
+
+    const data = await res.json();
+
+    document.getElementById("result").innerText =
+      data.output[0].content[0].text || "No result";
+  };
+
+  reader.readAsDataURL(file);
+}
+</script>
+
+</body>
+</html>
